@@ -27,7 +27,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:camera_test_app/previewscreen/albumGridView.dart';
 import 'package:flutter/material.dart';
@@ -99,33 +99,76 @@ class _CameraScreenState extends State {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Book Scanner'),
-        backgroundColor: Colors.blueGrey,
-      ),
-      body: Container(
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: _cameraPreviewWidget(),
-              ),
-              SizedBox(height: 10.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  _cameraTogglesRowWidget(),
-                  _captureControlRowWidget(context),
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        return orientation == Orientation.portrait
+            ? buildPortraitContainer(context)
+            : buildLandscapeContainer(context);
+      },
+    );
+  }
 
-                  imagePreviewRowWidget(context),
-                ],
-              ),
-              SizedBox(height: 20.0)
-            ],
+  Container buildPortraitContainer(BuildContext context) {
+    return Container(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Book Scanner'),
+          backgroundColor: Colors.blueGrey,
+        ),
+        body: Container(
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  flex: 1,
+                  child: _cameraPreviewWidget(),
+                ),
+                SizedBox(height: 10.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    _cameraTogglesRowWidget(context),
+                    _captureControlRowWidget(context),
+                    imagePreviewRowWidget(context),
+                  ],
+                ),
+                SizedBox(height: 20.0)
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Container buildLandscapeContainer(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+      ),
+      child: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              flex: 1,
+              child: _cameraPreviewWidget(),
+
+            ),
+            SizedBox(height: 10.0),
+
+            Column(
+
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _cameraTogglesRowWidget(context),
+                _captureControlRowWidget(context),
+                imagePreviewRowWidget(context),
+              ],
+            ),
+            SizedBox(height: 20.0)
+          ],
         ),
       ),
     );
@@ -172,24 +215,36 @@ class _CameraScreenState extends State {
   }
 
   /// Display a row of toggle to select the camera (or a message if no camera is available).
-  Widget _cameraTogglesRowWidget() {
+  Widget _cameraTogglesRowWidget(BuildContext context) {
     if (cameras == null || cameras.isEmpty) {
       return Spacer();
     }
 
     CameraDescription selectedCamera = cameras[selectedCameraIdx];
     CameraLensDirection lensDirection = selectedCamera.lensDirection;
-
-    return Expanded(
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: FlatButton.icon(
+    if (MediaQuery.of(context).orientation == Orientation.portrait) {
+      return Expanded(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FlatButton.icon(
+              onPressed: _onSwitchCamera,
+              icon: Icon(_getCameraLensIcon(lensDirection)),
+              label: Text(
+                  "${lensDirection.toString().substring(lensDirection.toString().indexOf('.') + 1)}")),
+        ),
+      );
+    } else if (MediaQuery.of(context).orientation == Orientation.landscape) {
+      return Expanded(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FlatButton.icon(
             onPressed: _onSwitchCamera,
             icon: Icon(_getCameraLensIcon(lensDirection)),
-            label: Text(
-                "${lensDirection.toString().substring(lensDirection.toString().indexOf('.') + 1)}")),
-      ),
-    );
+            label: Text(''),
+          ),
+        ),
+      );
+    }
   }
 
   IconData _getCameraLensIcon(CameraLensDirection direction) {
@@ -220,7 +275,7 @@ class _CameraScreenState extends State {
       final path = join(
         // In this example, store the picture in the temp directory. Find
         // the temp directory using the `path_provider` plugin.
-//        (await getTemporaryDirectory()).path,
+//        (await getTemporaryDirectory()).path,getExternalStorageDirectory
         (await getExternalStorageDirectory()).path, '${DateTime.now()}.png',
       );
       print(path);
@@ -247,22 +302,42 @@ class _CameraScreenState extends State {
   }
 
   Widget imagePreviewRowWidget(BuildContext context) {
-    return Expanded(
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: FlatButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AlbumPreviewPage(),
-              ),
-            );
-          },
-          icon: Icon(Icons.photo_album),
-          label: Text('Album'),
+    if (MediaQuery.of(context).orientation == Orientation.portrait) {
+      return Expanded(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FlatButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AlbumPreviewPage(),
+                ),
+              );
+            },
+            icon: Icon(Icons.photo_album),
+            label: Text('Album'),
+          ),
         ),
-      ),
-    );
+      );
+    } else if (MediaQuery.of(context).orientation == Orientation.landscape) {
+      return Expanded(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FlatButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AlbumPreviewPage(),
+                ),
+              );
+            },
+            icon: Icon(Icons.photo_album),
+            label: Text(''),
+          ),
+        ),
+      );
+    }
   }
 }
